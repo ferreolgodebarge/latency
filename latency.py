@@ -27,7 +27,6 @@ def ping_server(input_file: str, number: int) -> int:
         for server_ip in ipv4:
             response = os.system("ping -n " + str(number) +
                                  " " + server_ip + " > " + temp_file)
-            print("response = " + str(response))
             if response != 0:
                 stats = error_dict
                 stats["ip_addr"] = server_ip
@@ -37,13 +36,17 @@ def ping_server(input_file: str, number: int) -> int:
             write_row_csv(stats)
     elif os.name == 'posix':
         print("System Unix")
-        response = os.system("ping -c " + str(number) +
-                             " " + server_ip + " > " + temp_file)
-        unx_parse_ping("raw")
-        os.remove(temp_file)
-        stats = win_parse_ping("raw")
-        write_header_csv()
-        write_row_csv(stats)
+        for server_ip in ipv4:
+            response = os.system("ping -c " + str(number) +
+                                " " + server_ip + " > " + temp_file)
+            print("response = " + str(response))
+            if response != 0:
+                stats = error_dict
+                stats["ip_addr"] = server_ip
+            else:
+                stats = unx_parse_ping("raw")
+            os.remove(temp_file)
+            write_row_csv(stats)
     else:
         print("Unable to determine OS")
         response = 1
@@ -69,8 +72,21 @@ def win_parse_ping(raw_file: str) -> dict:
 
 
 def unx_parse_ping(raw_file: str) -> dict:
-    # TODO
-    pass
+    stats = dict()
+    with open(raw_file, 'r') as f:
+        content = f.readlines()
+        ip_address = re.findall(r"[0-9]+.[0-9]+.[0-9]+.[0-9]+", content[-3])
+        overview_numbers = re.findall(r"[0-9]+", content[-2])
+        stats_numbers = re.findall(r"[0-9]+.[0-9]+", content[-1])
+        stats["ip_addr"] = ip_address[0]
+        stats["sent"] = overview_numbers[0]
+        stats["recieved"] = overview_numbers[1]
+        stats["lost"] = overview_numbers[2]
+        stats["percentage"] = int(overview_numbers[2]) / int((overview_numbers[0]))
+        stats["min"] = stats_numbers[0]
+        stats["max"] = stats_numbers[2]
+        stats["avg"] = stats_numbers[1]
+    return stats
 
 
 def write_header_csv() -> None:
