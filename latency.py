@@ -39,7 +39,6 @@ def ping_server(input_file: str, number: int) -> int:
         for server_ip in ipv4:
             response = os.system("ping -c " + str(number) +
                                 " " + server_ip + " > " + temp_file)
-            print("response = " + str(response))
             if response != 0:
                 stats = error_dict
                 stats["ip_addr"] = server_ip
